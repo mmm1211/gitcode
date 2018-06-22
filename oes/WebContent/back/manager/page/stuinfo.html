@@ -1,0 +1,360 @@
+<style>
+
+#showpic{
+	width:100px;
+	height:100px;
+}
+#win_stuInfo_form{
+	align:center;
+}
+.my_label{
+		display:inline-block;
+		margin-left: 20px;
+	}
+.my_input{
+	width:200px;
+	height:20px;
+	border:1px solid #95b8e7;
+	margin-right:20px;
+}
+.form_front{
+	width:90%;
+	margin-left:140px;
+}
+.stu_div{
+	margin-left:200px;
+	margin-top:14px;
+	font-size:16px;
+	
+}
+.stu_span{
+	color:red;
+	margin-left: 12px;
+}
+
+</style>
+
+<table id="stuInfo_info" data-options="fit:true"></table>
+<div id="stuInfo_search" style="height:28px">
+	
+	<label class="my_label">专业:</label>
+	<select id="stuInfo_search_mid" class="my_select">
+		<option value="">--请选择--</option>
+	</select>
+	<label class="my_label">入学年份:</label>
+	<select id="stuInfo_search_grade" class="my_select" onchange="updateClassInfoByGrade()">
+		<option value="">--请选择--</option>
+	</select>
+	<label class="my_label">班级</label>
+	<select id="stuInfo_search_cid" class="my_select">
+		<option value="">--请选择--</option>
+	</select>
+	<label class="my_label">学号:</label>
+	<input type="text" id="stuInfo_search_sid" class="my_input" style="width:100px">
+	<label class="my_label">姓名:</label>
+	<input type="text" id="stuInfo_search_sname" class="my_input" style="width:100px">
+	<a href="javascript:searchShowStuInfo()" class="easyui-linkbutton" data-options="iconCls:'icon-user-magnify'">查询</a>
+</div>
+<!-- 添加或者修改学生信息的窗体 -->
+<div id="win_stuInfo" class="easyui-window" title="修改学生信息" style="width:600px;height:600px;"  
+       data-options="iconCls:'icon-user-edit',modal:true,closed:true,onClose:function(){ getStuInfoData()}"> 
+       <div class="form_front">
+       <form id="win_stuInfo_form" method="post" style="width:90%;height:90%;margin: 20px auto;" >
+		    <div class="af_div">  
+		        <label for="sid">学生学号:</label>  
+		        <input class="easyui-validatebox" type="text" id="sid" name="sid" data-options="required:true" />  
+		    </div> 
+		    <div class="af_div">  
+		        <label for="sname">学生名称:</label>  
+		        <input class="easyui-validatebox" type="text" id="sname" name="sname" data-options="required:true" />  
+		    </div>  
+		    <div class="af_div">  
+	        	<label for="pwd">密码:</label>  
+	        	<input class="easyui-validatebox" type="password" id="pwd" name="pwd" data-options="required:true" />  
+	    	</div> 
+		    <div class="af_div">
+		    	<label class="my_label">所属班级：</label>
+				<select id="win_stuInfo_search_cid" class="my_input">
+					<option value="">--请选择--</option>
+				</select>
+			</div>
+			 <div class="af_div">  
+		        <label for="sex">性别:</label>  
+		        <input class="" type="radio"  name="sex"  value="男"/>男
+			    <input class="" type="radio"  name="sex" value="女" />女 
+		    </div>  
+			    <div class="af_div">  
+		        <label for="cardID">身份证号:</label>  
+		        <input class="easyui-validatebox" type="text"  id="cardID" name="cardID" data-options="required:true" />  
+		    </div> 
+		   
+		     <div class="af_div">  
+		        <label for="pic">学生头像:</label>  
+		        <input class="easyui-validatebox" type="file" id="photo" name="photo" onchange="setImagePreviews(this,'showpic')" accept="image/jpeg,image/png,image/gif" data-options="required:true" />
+		    </div> 
+		    <div class="af_div">
+		    	<!-- 当选择一张图片时，会预先显示出来 -->
+		    	<div id="showpic"  style="position:absolute;left:400px;bottom: 200px;"></div> 
+		    </div>
+		    <div class="af_div">
+		    	<a id="stuInfo_Form_btn_ok" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" onclick="updateStuInfoBySid()" >确认</a> 
+		    	<a id="stuInfo_Form_btn_cancel" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" onclick="win_cancel()">取消</a> 
+		    </div>
+		</form>  
+      </div> 
+</div>
+	<!-- 学生详情页 -->
+<div id="stuInfo" class="easyui-window" title="学生详细信息" style="width:600px;height:600px;"  
+       data-options="iconCls:'icon-user-gray',modal:true,closed:true,onClose:function(){ getStuInfoData()}"> 
+	<div class="stu_div">
+		<label class="my_label">学号:</label> <span  class="stu_span" id="sid_detail"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">姓名:</label> <span class="stu_span" id="sname_detail"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">密码:</label> <span  class="stu_span" id="pwd_detail"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">所属班级：</label> <span class="stu_span" id="cid_detail"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">性别:</label> <span class="stu_span" id="sex_detail"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">身份证号:</label> <span class="stu_span" id="cardID_detail"></span>
+	</div>
+
+	<div class="stu_div">
+		<label class="my_label">头像:</label>
+		<div id="photo_detail"></div>
+	</div>
+</div>
+<script>
+
+var stuInfo_classInfo=[];
+//显示所有学生信息的函数
+function getStuInfoData(){
+	var  stuInfoDataGridObject = $('#stuInfo_info').datagrid({   
+	    url:'../../StuInfoServlet', 
+	    queryParams:{op:"findByPage"},
+	    striped:true,	//交替显示行背景
+	    nowrap:true,	//当数据长度超出列宽时将会自动截取。
+	    loadMsg:"数据加载中...",		//当从远程站点载入数据时，显示的一条快捷信息。
+	    sortName:"sid",	//当数据表格初始化时以哪一列来排序。
+	    remoteSort:false,   //是否通过远程服务器对数据排序。
+	    fitColumns:true, //自动使列适应表格宽度以防止出现水平滚动。
+	    pagination:true, //在数据表格底部显示分页工具栏。
+	    rownumbers:true, //是否显示列数
+	    //singleSelect:true, //是否允许多选
+	    pageSize:15,
+	    pageList:[5,10,15,20,25,30,35,40],
+	    columns:[[  
+	        {field:'sid',title:'学生编号',width:100,align:'center',sortable:true},   
+	        {field:'sname',title:'学生姓名',width:100,align:'center'},   
+	        {field:'cname',title:'班级',width:120,align:'center'},
+	        {field:'cardID',title:'身份证号',width:200,align:'center'}, 
+	        {field:'grade',title:'年级',width:60,align:'center'},
+	        {field:'sex',title:'性别',width:50,align:'center'},  
+	        {field:'mname',title:'专业',width:150,align:'center'},   
+	       	{field:'_operation',title:'操作',width:300,align:'center',formatter:function(val,row,index){
+	       		var pwd = row.cardID.substring(12);
+	       		var str = '<a href="javascript:stuInfoDetailsBySid(\''+row.sid+'\')" class="vean-icon-vcard">详细</a>&nbsp;&nbsp;';
+	       		str += '<a href="javascript:openStuInfoWinBySid(\''+row.sid+'\')" class="vean-icon-vcard-edit">修改</a>&nbsp;&nbsp;';
+	       		str += '<a href="javascript:resetPwdBySid(\''+row.sid+'\',\''+pwd+'\')" class="vean-icon-vcard-key">重置密码</a>';
+	       		return str;
+	       	}}
+	    ]],
+	    toolbar:"#stuInfo_search"
+	});
+}
+//页面加载函数
+$(function(){
+		var year = new Date().getFullYear();
+		var gradeInfo = "";
+		for(var i=year;i>=2000;i--){
+			gradeInfo +="<option value='"+i+"'>"+i+"年</option>";
+		}
+		$("#stuInfo_search_grade").append($(gradeInfo));
+		
+		$.post("../../StuInfoServlet",{op:'getInfos'},function(data){
+			var strInfo="";
+			$.each(data,function(index,item){
+				if(item.mid == "0"){//说明这个是专业信息，则拼接出来
+					strInfo +="<option value='"+item.cid+"'>"+item.cname+"</option>";
+				}else{
+					stuInfo_classInfo[stuInfo_classInfo.length] = item;
+				}
+			});
+			$("#stuInfo_search_mid").append($(strInfo));
+		},"json")
+		
+		$(".addstu_ul input,.addstu_ul_select").focus(function(){
+			$("#addstu_warninfo").html("");
+		})
+		getStuInfoData();//显示学生信息
+	})
+//通过改变年级下拉框修改班级下拉框的函数
+function updateClassInfoByGrade(){
+		var mid = $("#stuInfo_search_mid").val();
+		var gid = $("#stuInfo_search_grade").val();
+		$("#stuInfo_search_cid")[0].length = 1;
+		var str = "";
+		$.each(stuInfo_classInfo,function(index,item){
+			if(mid == item.mid && item.grade == gid){
+				str+="<option value='"+item.cid+"'>"+item.cname+"</option>"
+			}
+		});
+		$("#stuInfo_search_cid").append($(str));
+	}
+
+	
+	//条件查询
+function searchShowStuInfo(){
+		var sid=$.trim($("#stuInfo_search_sid").val());
+		var grade=$.trim($("#stuInfo_search_grade").val());
+		var cid=$.trim($("#stuInfo_search_cid").val());
+ 		var mid=$.trim($("#stuInfo_search_mid").val());
+		var sname=$.trim($("#stuInfo_search_sname").val());
+		 $('#stuInfo_info').datagrid({
+			url:'../../StuInfoServlet',
+			queryParams:{op:'findByCondition',sid:sid,cid:cid,mid:mid,sname:sname,grade:grade}
+		});
+	}
+//重置密码
+function resetPwdBySid(sid,pwd){
+	$.messager.confirm('确认提示','您确定要重置该学生密码吗?',function(rt){
+		if(rt){
+			$.post("../../StuInfoServlet",{op:'resetPwd',sid:sid,pwd:pwd},function(data){
+				data = parseInt($.trim(data));
+				if(data == -1){
+					$.messager.show({title:'温馨提示',msg:'网络出现异常，请稍后重试...',timeout:2000,showType:'slide'});
+					return;
+				}else if (data >0){
+					$.messager.show({title:'成功提示',msg:'密码重置成功,初始为身份证后六位...',timeout:2000,showType:'slide'});
+					return;
+				}else{
+					$.messager.alert('失败提示','密码重置失败,请稍后重试...','error');
+					return;
+				}
+			},"json");
+		}
+	})
+}
+//打开修改窗体的函数
+function openStuInfoWinBySid(sid){
+
+	$('#win_stuInfo').window('open');  // open a window 
+	$("#win_stuInfo_search_cid")[0].length =1; //清空班级下拉框
+	$.post("../../ClassInfoServlet",{op:"findAll"},function(data){ //所有班级
+		var classObj="";
+		$.each(data,function(index,item){
+			classObj+="<option value='"+item.cid+"'>"+item.cname+"</option>";
+		});
+		$("#win_stuInfo_search_cid").append($(classObj));
+	},"json")
+	//获取指定学生信息
+	$.post("../../StuInfoServlet",{op:"findBySid",sid:sid},function(data){
+			var cid = data.cid;
+			$.post("../../ClassInfoServlet",{op:"findByCid",cid:cid},function(data){
+				$("#win_stuInfo_search_cid option[value='"+data.cid+"']").attr("selected",true);//指定班级值选中
+			},"json")
+			$("#sid").val( data.sid );
+			$("#sname").val( data.sname );
+			$("#pwd").val( data.pwd );
+			$("#cardID").val( data.cardID );
+			$("#tel").val( data.tel );
+			$("input:radio[value='"+data.sex+"']").attr("checked",true);//指定值选中
+			$("#photo").html("<img src='../../../"+data.photo+"' width=100px height=100px;>");
+	},"json");
+}
+//修改学生信息的函数
+function updateStuInfoBySid(){
+	
+	var sid = $.trim($("#sid").val()); //学生学号
+	var sname = $.trim($("#sname").val()); //学生名称
+	var cid = $.trim($("select[id=win_stuInfo_search_cid] option:selected").val()); //所属班级
+	var pwd = $.trim($("#pwd").val()); //学生密码
+	var sex = $("input[name='sex']:checked").val();//性别
+	var cardID = $.trim($("#cardID").val()); //身份证号
+	var tel = $.trim($("#tel").val()); //联系方式
+	//是否修改头像信息
+	if($("#photo").val().length == 0){ //说明没有选择头像
+		$.post("../../StuInfoServlet",{op:"updateStuInfoWithOutPhoto",sid : sid,sname : sname,cid : cid,pwd : pwd,sex : sex,cardID : cardID,tel : tel},function(data){
+			data = parseInt($.trim(data));
+				if(data == -1){
+					$.messager.show({title:'温馨提示',msg:'网络出现异常，请稍后重试...',timeout:2000,showType:'slide'});
+					return;
+				}else if (data >0){
+					$.messager.show({title:'成功提示',msg:'该学生信息已经被修改...',timeout:2000,showType:'slide'});
+					win_cancel(); //清空修改学生信息的窗体
+					return;
+				}else{
+					$.messager.alert('失败提示','该学生信息修改失败,请稍后重试...','error');
+					return;
+				}
+		},"json");
+	}else{
+		//ajax发送添加学生请求 ,包括修改学生图片
+		$.ajaxFileUpload({
+			url : "../../StuInfoServlet?op=updateStuInfo",
+			secureuri : false,
+			fileElementId : "photo",
+			data : {
+				sid : sid,
+				sname : sname,
+				cid : cid,
+				pwd : pwd,
+				sex : sex,
+				cardID : cardID,
+				tel : tel
+			},
+			dataType : "json",
+			success : function(data, status) {
+				data = parseInt($.trim(data));
+				if (data == 1) {
+					alert("修改学生信息成功...");
+					win_cancel();
+
+				} else {
+					alert("学生信息修改失败...");
+				}
+			},
+			error : function(data, status, e) {
+				alert("学生信息修改失败\n" + e);
+			}
+		});
+	}
+	
+}
+//取消修改学生信息的函数
+function win_cancel(){
+	$("#win_stuInfo_form")[0].reset(); //清空表单
+	$("#showpic").html("");   //清空预览图片
+	$("#win_stuInfo_search_cid")[0].length =1;
+	$('#win_stuInfo').window('close');  // close a window  
+
+}
+
+//学生详情
+function stuInfoDetailsBySid(sid){
+	$("#stuInfo").window('open');  // open a window 
+	//获取指定学生信息
+	$.post("../../StuInfoServlet",{op:"findBySid",sid:sid},function(data) {
+		var cid = data.cid;
+		$.post("../../ClassInfoServlet", {
+			op : "findByCid",
+			cid : cid
+		}, function(data) {
+			$("#cid_detail").text(data.cname);
+		}, "json")
+		$("#sid_detail").text(data.sid);
+		$("#sname_detail").text(data.sname);
+		$("#pwd_detail").text(data.pwd);
+		$("#cardID_detail").text(data.cardID);
+		$("#tel_detail").text(data.tel);
+		$("#sex_detail").text(data.sex);
+		$("#photo_detail").html("<img src='../../../stuPhotos/"+data.photo+"' width=100px height=100px;>");},
+		"json");
+}
+</script>

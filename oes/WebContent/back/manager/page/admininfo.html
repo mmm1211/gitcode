@@ -1,0 +1,392 @@
+<style>
+
+#showpic{
+	width:100px;
+	height:100px;
+}
+#win_adminInfo_form{
+	align:center;
+}
+.my_label{
+		display:inline-block;
+		margin-left: 20px;
+	}
+.my_input{
+	width:200px;
+	height:20px;
+	border:1px solid #95b8e7;
+	margin-right:20px;
+}
+.form_front{
+	width:90%;
+	margin-left:140px;
+}
+
+</style>
+
+<table id="admin-info" data-options="fit:true"></table> 
+<div id="adminInfo_search" style="height:28px">
+	<a href="javascript:showAdminInfoWin()" class="easyui-linkbutton" data-options="iconCls:'icon-user-add',plain:true" style="float:left">添加</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:showUpdateAdminInfoWin()" class="easyui-linkbutton" data-options="iconCls:'icon-user-edit',plain:true" style="float:left">修改</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:updateAdminInfoStatus(1)" class="easyui-linkbutton" data-options="iconCls:'icon-user-go',plain:true" style="float:left">启用</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:updateAdminInfoStatus(0)" class="easyui-linkbutton" data-options="iconCls:'icon-user-delete',plain:true" style="float:left">冻结</a>
+	<div class="datagrid-btn-separator"></div>
+	
+	<label class="my_label">所属角色类型：</label>
+	<select id="admin_search_roleInfos" class="my_input">
+		<option value=''>--请选择--</option>
+	</select>
+	<label class="my_label">管理员名称：</label>
+	<input type="text" id="admin_search_aname" class="my_input"  />
+	<a href="javascript:searchAdminInfo()" class="easyui-linkbutton" data-options="iconCls:'icon-user-magnify'">查询</a>
+	<!-- 添加或者修改管理员的窗体 -->
+	<div id="win_adminInfo" class="easyui-window" title="添加管理员信息" style="width:600px;height:500px;"  
+        data-options="iconCls:'icon-user-add',modal:true,closed:true,onClose:function(){ getData();}"> 
+        <div class="form_front">
+	       <form id="win_adminInfo_form" method="post" style="width:90%;height:90%;margin: 20px auto;" >  
+			    <div class="af_div">  
+			        <label for="aname">管理员名称:</label>  
+			        <input class="easyui-validatebox" type="text" id="aname" name="aname" data-options="required:true" />  
+			    </div>  
+			    <div class="af_div">
+			    	<label class="my_label">所属角色名称：</label>
+					<select id="win_admin_search_roleInfos" class="my_input">
+						<option value='请选择'>--请选择--</option>
+					</select>
+				</div>
+			    <div class="af_div">  
+			        <label for="pwd">密码:</label>  
+			        <input class="easyui-validatebox" type="password" id="pwd" name="pwd" data-options="required:true" />  
+			    </div>  
+			     <div class="af_div">  
+			        <label for="email">邮箱:</label>  
+			        <input class="easyui-validatebox" type="email"  id="email" name="email" data-options="required:true" />  
+			    </div> 
+			     <div class="af_div">  
+			        <label for="pic">图片:</label>  
+			        <input class="easyui-validatebox" type="file" id="photo" name="photo" onchange="setImagePreviews(this,'showpic')" accept="image/jpeg,image/png,image/gif" data-options="required:true" />
+			    </div> 
+			    <div class="af_div">
+			    	<!-- 当选择一张图片时，会预先显示出来 -->
+			    	<div id="showpic"  style="position:absolute;left:400px;bottom: 200px;"></div> 
+			    </div>
+			    <div class="af_div">
+			    	<a id="adminInfo_Form_btn_ok" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" >确认</a> 
+			    	<a id="adminInfo_Form_btn_cancel" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" onclick="win_cancel_adminInfo()">取消</a> 
+			    </div>
+			</form>  
+       </div> 
+	</div>
+	<!-- 显示管理员详情的div -->
+	<div id="win_adminInfo_detail" class="easyui-window" title="管理员详情" style="width:600px;height:500px"  
+        data-options="iconCls:'icon-user-gray',modal:true,closed:true">
+        <div id="win_adminInfo_detail_div" align="center" style="width:90%">
+        	<div>
+        		<label>管理员名称:</label> 
+     			<span id="det_aname"></span>
+        	</div>
+        	<div>
+        		<label>所属角色名称:</label> 
+     			<span id="det_rname"></span> 
+        	</div>
+     		<div>
+     			<label>管理员密码:</label>  
+     			<span id="det_pwd"></span> 
+     		</div>
+     		<div>
+     			<label>邮箱:</label> 
+     			<span id="det_email"></span> 
+     		</div>
+     		<div>
+     			<label>管理员状态:</label>  
+     			<span id="det_status"></span> 
+     		</div>
+     		<div>
+     			<label>管理员头像:</label>  
+     			<span id="det_photo"></span> 
+     		</div>
+        </div>
+    </div>  
+</div>  
+<div id="shop_dialog" class="easyui-dialog" title="添加管理员信息" style="width:400px;height:200px;"  
+        data-options="resizable:true,modal:true,closed:true">  
+   
+</div>  
+
+
+<script> 
+//定义的全局变量
+var admin_roleInfos_info;//所有角色类型数据对象
+var adminInfoDataGridObject = undefined; //当前管理员数据对象
+//初始时加载角色信息和管理员信息的函数
+$(function(){
+	//查询所有管理员类型信息
+	$.get("../../RoleInfoServlet",{op:"findAll"},function(data){
+		admin_roleInfos_info=data;
+		var str="";
+		$.each(data,function(index,item){
+			str+="<option value='"+item.rid+"'>"+item.rname+"</option>";
+		})
+		$("#admin_search_roleInfos").append($(str));
+		//查询所有管理员信息
+		getData();
+	},"json");
+});
+//查询所有管理员的信息
+function getData(){
+	adminInfoDataGridObject = $('#admin-info').datagrid({   
+	    url:'../../AdminInfoServlet', 
+	    queryParams:{op:"findByPage"},
+	    striped:true,
+	    nowrap:true,
+	    loadMsg:"数据加载中...",
+	    sortName:"aid",
+	    remoteSort:false,
+	    fitColumns:true,
+	    pagination:true,
+	    rownumbers:true,
+	    pageSize:15,
+	    pageList:[5,10,15,20,25,30,35,40],
+	    columns:[[  
+	        {checkbox:true},
+	        {field:'photo',title:'图像',width:100,align:'center',formatter:function(val,row,index){
+	        	return "<img src='../../../"+row.photo+"' width=64px height=64px;>";
+	       			 }
+	        },   
+	        {field:'aid',title:'管理员编号',width:60,align:'center',sortable:true},   
+	        {field:'aname',title:'管理员名称',width:100,align:'center'},  
+	        {field:'rid',title:'角色信息',width:80,align:'center',formatter:function(val,row,index){
+	        	for(var i=0,len=admin_roleInfos_info.length;i<len;i++){
+	        		if(val == admin_roleInfos_info[i].rid){
+	        			return admin_roleInfos_info[i].rname;
+	        		}
+	        	}
+	        	return "";
+	        }},   
+	        {field:'pwd',title:'密码',width:120,align:'center'}, 
+	        {field:'email',title:'邮箱',width:120,align:'center'}, 
+	        {field:'status',title:'状态',width:60,align:'center',formatter:function(val,row,index){ //标记管理员类型状态的函数
+		        	if(val == "0"){
+		        		return "<font color='red'>冻结</front>";
+		        	}else{
+		            	return "<font color='green'>启用</front>";
+		        	}
+	        	}
+	        },
+	        {field:'_operate',title:'操作',width:120,align:'center',formatter:function(val,row,index){
+	        	
+	        	return "<a href='javascript:showAdminInfoDetail("+row.aid+")' class='vean-icon-vcard'>详细</a>";
+	        	
+	       			 }
+	       	}  
+	    ]],
+	    toolbar:"#adminInfo_search"
+	    });
+	$("#win_admin_search_roleInfos").empty(); //将下拉框清空
+	$("#win_admin_search_roleInfos option[value='请选择']").attr("selected",true);//将下拉框设置为请选择
+}
+//添加管理员的窗体
+function showAdminInfoWin(){
+	
+	//设置窗体属性
+	$("#win_adminInfo").window({
+		title:"添加管理员信息",
+		iconCls:"icon-user-add",
+		closed:false,
+		modal:true,	
+	});
+	//查询所有角色信息
+	$.get("../../RoleInfoServlet",{op:"findAll"},function(data){
+		var str="";
+		$.each(data,function(index,item){
+			str+="<option value='"+item.rid+"'>"+item.rname+"</option>";
+		})
+		$("#win_admin_search_roleInfos").append($(str));
+	},"json");
+	
+	//为 “确定” 按钮绑定添加管理员的函数
+	$("#adminInfo_Form_btn_ok").attr('href','javascript:addAdminInfo()');
+}
+//添加管理员的函数
+function addAdminInfo(){
+	
+	var aname=$.trim($("#aname").val()); //管理员名称
+	var rid=$.trim($("select[id=win_admin_search_roleInfos] option:selected").val());   //所属管理员类型
+	var pwd=$.trim($("#pwd").val());   //管理员密码
+	var email=$.trim($("#email").val()); //邮箱
+	//ajax发送添加管理员请求
+	$.ajaxFileUpload({
+		url:"../../AdminInfoServlet?op=addAdminInfo",
+		secureuri:false,
+		fileElementId:"photo",
+		data:{aname:aname,rid:rid,pwd:pwd,email:email},
+		dataType:"json",
+		success:function(data,status){
+			data=parseInt($.trim(data));
+			if(data==1){
+				alert("添加管理员信息成功...");
+				$("#win_adminInfo_form")[0].reset(); //清空表单
+				$("#showpic").html("");   //清空预览图片
+				$("#win_admin_search_roleInfos").empty(); //将下拉框清空
+				$("#win_admin_search_roleInfos option[value='请选择']").attr("selected",true);//将下拉框设置为请选择
+
+				
+			}else{
+				alert("管理员信息添加失败...");
+			}
+		},
+		error:function(data,status,e){
+			alert("管理员信息添加失败\n"+e);
+		}
+	})
+}
+//取消添加管理员的函数
+function win_cancel_adminInfo(){
+	$("#win_adminInfo_form")[0].reset(); //清空表单
+	$("#showpic").html("");   //清空预览图片
+	$("#win_admin_search_roleInfos").empty(); //将下拉框清空
+	$("#win_admin_search_roleInfos option[value='请选择']").attr("selected",true);//将下拉框设置为请选择
+	$('#win_adminInfo').window('close');  // close a window  
+
+}
+//修改管理员的窗体
+function showUpdateAdminInfoWin(){
+	//判断是否选择一列
+	var rows =adminInfoDataGridObject.datagrid("getChecked");
+	if(rows.length<=0){
+		$.messager.show({title:'温馨提示',msg:'请选择您要修改的管理员...',timeout:3000,showType:'slide'});
+		return;
+	}else{
+		
+		//创建修改管理员的窗体
+		$("#win_adminInfo").window({
+			title:"修改管理员信息",
+			iconCls:"icon-user-edit",
+			closed:false,
+			modal:true,	
+		})
+		//查询所有管理员类型信息
+		$.get("../../RoleInfoServlet",{op:"findAll"},function(data){
+			var str="";
+			$.each(data,function(index,item){
+				str+="<option value='"+item.rid+"'>"+item.rname+"</option>";
+			})
+			$("#win_admin_search_roleInfos").append($(str));
+		},"json");
+		
+		//显示管理员信息
+		var row =adminInfoDataGridObject.datagrid("getChecked")[0]; //获取选中的行记录
+		var aid= row.aid; //获取选中行管理员编号
+		//获取指定管理员信息
+		$.post("../../AdminInfoServlet",{op:"findByAid",aid:aid},function(data){
+				$("#win_admin_search_roleInfos option[value='"+data.rid+"']").attr("selected",true);//将下拉框设置为本新闻的新闻类型
+				$("#aname").val( data.aname );
+				$("#pwd").val( data.pwd );
+				$("#email").val( data.email );
+				$("#showpic").html("<img src='../../../"+data.photo+"' width=100px height=100px;>");
+				
+		},"json");
+		//为 “确定” 按钮绑定添加管理员的函数
+		$("#adminInfo_Form_btn_ok").attr('href','javascript:updateAdminInfo('+aid+')');
+	}
+}
+//修改管理员的函数 
+function updateAdminInfo(aid){
+	
+	var aname=$.trim($("#aname").val()); //管理员名称
+	var rid=$.trim($("select[id=win_admin_search_roleInfos] option:selected").val());   //所属管理员类型
+	var pwd=$.trim($("#pwd").val());   //管理员密码
+	var email=$.trim($("#email").val()); //邮箱
+	//ajax发送修改管理员请求
+	$.ajaxFileUpload({
+		url:"../../AdminInfoServlet?op=updateAdminInfo",
+		secureuri:false,
+		fileElementId:"photo",
+		data:{aid:aid,aname:aname,rid:rid,pwd:pwd,email:email},
+		dataType:"json",
+		success:function(data,status){
+			data=parseInt($.trim(data));
+			if(data==1){
+				alert("修改管理员信息成功...");
+				$("#win_adminInfo_form")[0].reset(); //清空表单
+				$("#showpic").html("");   //清空预览图片
+				$("#win_admin_search_roleInfos").empty(); //将下拉框清空
+				$("#win_admin_search_roleInfos option[value='请选择']").attr("selected",true);//将下拉框设置为请选择
+				
+			}else{
+				alert("管理员信息修改失败...");
+			}
+		},
+		error:function(data,status,e){
+			alert("管理员信息修改失败\n"+e);
+		}
+	})
+}
+//修改管理员状态的函数
+function updateAdminInfoStatus(status){
+	var flag="";
+	if(status =="1"){
+		flag ="启用";
+	}else{
+		flag="冻结";
+	}
+	var rows =adminInfoDataGridObject.datagrid("getChecked");
+	if(rows.length<=0){
+		$.messager.show({title:'温馨提示',msg:'请选择您要'+flag+'的管理员...',timeout:3000,showType:'slide'});
+		return;
+	}else{
+		$.messager.confirm('操作确认','该管理员将要'+flag+',您确定吗?',function(r){
+			if(r){
+				var aids ="";
+				for(var i=0,len=rows.length;i<len-1;i++){
+					aids+=rows[i].aid+",";
+				}
+				aids+=rows[i].aid;
+				$.post("../../AdminInfoServlet",{op:"updateAdminInfoStatus",aids:aids,status:status},function(data){
+					data=parseInt($.trim(data));
+					if(data >0){
+						$.messager.show({title:'成功提示',msg:'管理员信息'+flag+'成功...',timeout:3000,showType:'slide'});
+						adminInfoDataGridObject.datagrid("reload");
+					}else{
+						$.messager.alert('失败提示','管理员信息'+flag+'失败...','error');
+					}
+				},"text");
+			}	
+		})
+	}
+}
+//管理员详情
+function showAdminInfoDetail(aid){
+	
+	$('#win_adminInfo_detail').window('open');  // open a window   
+	//获取指定管理员信息
+	$.post("../../AdminInfoServlet",{op:"findByAid",aid:aid},function(data){
+			var rid = data.rid;
+			$.post("../../RoleInfoServlet",{op:"findByRid",rid:rid},function(data){
+				$("#det_rname").text( data.rname );
+			},"json")
+			$("#det_aname").text( data.aname );
+			$("#det_pwd").text( data.pwd );
+			$("#det_email").text( data.email );
+			$("#det_photo").html("<img src='../../../"+data.photo+"' width=100px height=100px;>");
+			if( data.status == 1){
+				$("#det_status").text( "正常" );
+			}else if(data.status == 0){
+				$("#det_status").text( "冻结" );
+			}
+	},"json");
+}
+//条件查询
+function searchAdminInfo(){
+	//var cname =$.trim($("#examPaper_search_cname").val());
+	var rid=$.trim($("#admin_search_roleInfos").val());    //角色
+	var aname=$.trim($("#admin_search_aname").val());  //名称
+	$('#admin-info').datagrid({
+		url:"../../AdminInfoServlet",
+		queryParams:{op:'findByCondition',rid:rid,aname:aname}
+	});
+}
+</script>

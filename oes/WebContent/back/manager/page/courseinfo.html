@@ -1,0 +1,191 @@
+<table id="course_info" data-options="fit:true"></table>
+<div id="course_search" style="height: 28px; line-height: 28px">
+	<a href="javascript:addCourseInfo()" class="easyui-linkbutton"
+		data-options="iconCls:'icon-book-add',plain:true" style="float: left">添加</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:updateCourseInfo()" class="easyui-linkbutton"
+		data-options="iconCls:'icon-book-edit',plain:true" style="float: left">修改</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:updateCourse(0)" class="easyui-linkbutton"
+		data-options="iconCls:'icon-book-delete',plain:true"
+		style="float: left">停开</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:updateCourse(1)" class="easyui-linkbutton"
+		data-options="iconCls:'icon-book-go',plain:true" style="float: left">启开</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:saveCourseInfo()" class="easyui-linkbutton"
+		data-options="iconCls:'icon-save',plain:true" style="float: left">保存</a>
+	<div class="datagrid-btn-separator"></div>
+	<a href="javascript:goBackCourse()" class="easyui-linkbutton"
+		data-options="iconCls:'icon-undo',plain:true" style="float: left">撤销</a>
+	<div class="datagrid-btn-separator"></div>
+	<label class="my_label">开设学期:</label> 
+	 <select id="course_search_semester" class="my_select" >
+		<option value="-1">--请选择--</option>
+	</select>
+	<label class="my_label">课程状态:</label> 
+	 <select id="course_search_status" class="my_select">
+		<option value="-1">--请选择--</option>
+		<option value="0">停开</option>
+		<option value="1">启开</option>
+	</select>
+	<label class="my_label">课程名称:</label> 
+	<input type="text" name="cname" id="course_search_cname " class="my_input" />
+	
+	 <a href="javascript:searchCourseInfo()" class="easyui-linkbutton" 
+		 data-options="iconCls:'icon-book-magnify'">查询</a>
+</div>
+<script>
+var courseEditRow = undefined; //编辑行
+var courseOp="";//当前正在进行的操作
+var courseFlag="";//当前正在进行操作的名称
+var semesterInfo=[{sid:1,sname:"第一学期"},{sid:2,sname:"第二学期"},{sid:3,sname:"第三学期"},{sid:4,sname:"第四学期"},
+                  {sid:5,sname:"第五学期"},{sid:6,sname:"第六学期"},{sid:7,sname:"第七学期"},
+                  {sid:8,sname:"第八学期"},{sid:9,sname:"第九学期"},{sid:10,sname:"第十学期"},];
+$(function(){
+	var semesterObj="";
+	for(var i =0,len = semesterInfo.length;i<len;i++){
+		semesterObj+="<option value='"+semesterInfo[i].sid+"'>"+semesterInfo[i].sname+"</option>";
+	}
+	$("#course_search_semester").append($(semesterObj));
+})
+var courseDataGridObject = $('#course_info').datagrid({   
+    url:'../../CourseInfoServlet', 
+    queryParams:{op:"findByPage"},
+    striped:true,	//交替显示行背景
+    nowrap:true,	//当数据长度超出列宽时将会自动截取。
+    loadMsg:"数据加载中...",		//当从远程站点载入数据时，显示的一条快捷信息。
+    sortName:"cid",	//当数据表格初始化时以哪一列来排序。
+    remoteSort:false,   //是否通过远程服务器对数据排序。
+    fitColumns:true, //自动使列适应表格宽度以防止出现水平滚动。
+    pagination:true, //在数据表格底部显示分页工具栏。
+    rownumbers:true, //是否显示列数
+    //singleSelect:true, //是否允许多选
+    pageSize:5,
+    pageList:[5,10,15,20,25,30,35,40],
+    columns:[[  
+        {checkbox:true},
+        {field:'cid',title:'课程编号',width:100,align:'center',sortable:true},   
+        {field:'cname',title:'课程名称',width:100,align:'center',editor:{type:"text",options:{required:true}}},   
+        {field:'semester',title:'开课学期',width:100,align:'center',formatter:function(val,row,index){ //标记课程状态的函数
+        	for(var i =0,len=semesterInfo.length;i<len;i++){
+        			if(semesterInfo[i].sid == val){
+        				return semesterInfo[i].sname;
+        			}
+        		}
+        	},editor:{type:"combobox",options:{required:true,valueField:"sid",textField:"sname",data:semesterInfo}}
+        },   
+        {field:'status',title:'课程状态',width:100,align:'center',formatter:function(val,row,index){ //标记课程状态的函数
+        	if(val == "0"){
+        		return "<font color='red'>停开</front>";
+        	}else{
+            	return "<font color='green'>启开</front>";
+        	}
+        }}
+        ]],
+        toolbar:"#course_search"
+});
+function addCourseInfo(){
+	if(courseEditRow == undefined){ //说明没有正在编辑的行
+		//添加一行
+		courseDataGridObject.datagrid('insertRow',{index:0,row:{}});
+		//开启编辑这一行
+		courseDataGridObject.datagrid('beginEdit',0);
+		courseEditRow =0;
+		courseOp="addCourseInfo";
+		courseFlag="添加";
+	}
+}
+function updateCourseInfo(){
+	if(courseEditRow == undefined){ //说明没有正在编辑的行
+		//获取要修改的行
+		var row= courseDataGridObject.datagrid("getChecked")[0];
+		if(row == undefined){
+			$.messager.show({title:'温馨提示',msg:'请选择您要修改的数据...',timeout:2000,showType:'slide'});
+			return;
+		}
+		//获取选中行索引
+		courseEditRow = courseDataGridObject.datagrid("getRowIndex",row);
+		//开启编辑这一行
+		courseDataGridObject.datagrid('beginEdit',courseEditRow);
+		courseOp="updateCourseInfo";
+		courseFlag="修改";
+	}
+} 
+function updateCourse(status){
+	var flag="停开";
+	if(status ==1){
+		flag="启开";
+	}
+	var rows= courseDataGridObject.datagrid("getChecked");
+	if(rows.length <= 0){
+		$.messager.show({title:'温馨提示',msg:'请选择您'+flag+'的课程...',timeout:2000,showType:'slide'});
+		return;
+	}else{
+		$.messager.confirm('确认操作','您确定要'+flag+'这些课程吗?',function(r){
+			if(r){
+				var cids ="";
+				for(var i=0,len = rows.length;i<len-1;i++){
+					cids+=rows[i].cid+",";
+				}
+				cids+=rows[i].cid;
+				$.post("../../CourseInfoServlet",{op:"updateCourse",cids:cids,status:status},function(data){
+					if(data >0){
+						$.messager.show({title:'成功提示',msg:flag+'课程设置成功...',timeout:2000,showType:'slide'});
+						courseDataGridObject.datagrid("reload");
+					}else{
+						courseDataGridObject.datagrid("rejectChanges");
+						$.messager.alert('失败提示',flag+'课程设置失败...','error');
+					}
+					row =null;
+					courseEditRow = undefined;
+				},"text");
+			}
+		});
+
+	}
+}
+function saveCourseInfo(){
+	if(courseEditRow != undefined){
+		//结束编辑
+		courseDataGridObject.datagrid('endEdit',courseEditRow);
+		//获取用户编辑的数据
+		var row = courseDataGridObject.datagrid('getChanges')[0];
+		if(row != undefined){
+			row["op"]=courseOp;
+			$.post("../../CourseInfoServlet",row,function(data){
+				data = parseInt($.trim(data));
+				if(data >0){
+					$.messager.show({title:'成功提示',msg:courseFlag+'课程成功...',timeout:2000,showType:'slide'});
+					row =null;
+					courseEditRow = undefined;
+					 courseDataGridObject.datagrid("reload");
+				}else{
+					courseDataGridObject.datagrid("rejectChanges");
+					$.messager.alert('失败提示','课程信息'+courseFlag+'失败...','error');
+					row =null;
+					courseEditRow = undefined;
+				}
+				
+			},"text");
+		}
+	}
+}      
+
+function goBackCourse(){
+	row =null;
+	courseEditRow = undefined;
+	courseDataGridObject.datagrid("rejectChanges");
+}
+function searchCourseInfo(){
+	//var cname =$.trim($("#course_search_cname").val());
+	var cname = $(" input[ name='cname' ] ").val();
+	var status =$.trim($("#course_search_status").val());
+	var semester=$.trim($("select[id=course_search_semester] option:selected").val());   //课程所属学期
+	$('#course_info').datagrid({
+		url:"../../CourseInfoServlet",
+		queryParams:{op:'findByCondition',cname:cname,semester:semester,status:status}
+	});
+}
+
+</script>

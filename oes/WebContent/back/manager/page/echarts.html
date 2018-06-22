@@ -1,0 +1,318 @@
+<table id="echarts_info" data-options="fit:true"></table>
+<div id="echarts_search" style="height: 28px; line-height: 28px">
+	<label class="my_label">课程:</label> 
+	<select id="echarts_search_courseId" class="my_select" onchange="findEidByCid()" >
+		<option value="">--请选择--</option>
+	</select>
+	<div class="datagrid-btn-separator"></div>
+	<label class="my_label">专业:</label> 
+	<select id="echarts_search_mid" class="my_select" onchange="findCidByMid()">
+		<option value="">--请选择--</option>
+	</select>	
+	<label class="my_label">考试试卷:</label> 
+ 	<select id="echarts_search_eid" class="my_select" onchange="gradeEcharts()" >
+		<option value="">--请选择--</option>
+	</select>
+	
+	<label class="my_label">班级:</label> 
+	<select id="echarts_search_cid" class="my_select" onchange="classEcharts()">
+		<option value="">--请选择--</option>
+	</select>
+		
+	<a href="javascript:void(0)" class="easyui-linkbutton"  id="barBtn" data-options="iconCls:'icon-keyboard-magnify'">生成柱状图</a>
+	<a href="javascript:void(0)" class="easyui-linkbutton"  id="lineBtn" data-options="iconCls:'icon-map-magnify'">生成折线图</a>
+	<div id="chartmain" style="width:600px; height: 400px;margin:30px 100px;"></div>
+</div>
+<script>
+
+$(function(){
+	//所有专业信息
+	$.post("../../MajorInfoServlet",{op:"findAll"},function(data){
+		var majorInfoObj="";
+		$.each(data,function(index,item){
+			majorInfoObj+="<option value='"+item.mid+"'>"+item.mname+"</option>";
+		});
+		$("#echarts_search_mid").append($(majorInfoObj));
+
+	},"json");
+	//所有课程信息
+	$.post("../../CourseInfoServlet",{op:"findAll"},function(data){
+		var courseInfoObj="";
+		$.each(data,function(index,item){
+			courseInfoObj+="<option value='"+item.cid+"'>"+item.cname+"</option>";
+		});
+		$("#echarts_search_courseId").append($(courseInfoObj));
+
+	},"json");
+	//所有试卷信息
+	$.post("../../ExamPaperServlet",{op:"findAll"},function(data){
+		var examPaperObj="";
+		$.each(data,function(index,item){
+			examPaperObj+="<option value='"+item.eid+"'>"+item.ename+"</option>";
+		});
+		$("#echarts_search_eid").append($(examPaperObj));
+
+	},"json");
+	
+	//所有班级信息
+	$.post("../../ClassInfoServlet",{op:"findAll"},function(data){
+		var classInfoObj="";
+		$.each(data,function(index,item){
+			classInfoObj+="<option value='"+item.cid+"'>"+item.cname+"</option>";
+		});
+		$("#echarts_search_cid").append($(classInfoObj));
+
+	},"json");
+
+	
+});
+//将 下拉框放进表格
+ var echartsObject = $('#echarts_info').datagrid({   
+        toolbar:"#echarts_search"
+});
+//专业和班级联动
+function findCidByMid(){
+	
+	var mid = $.trim($("#echarts_search_mid").val());
+	$("#echarts_search_cid")[0].length = 1;
+	//指定课程所有班级信息
+	$.post("../../ClassInfoServlet",{op:"findByMid",mid:mid},function(data){
+		var classInfoObj="";
+		$.each(data,function(index,item){
+			classInfoObj+="<option value='"+item.cid+"'>"+item.cname+"</option>";
+		});
+		$("#echarts_search_cid").append($(classInfoObj));
+
+	},"json");
+	
+}
+//课程和试卷联动
+function findEidByCid(){
+	var cid = $.trim($("#echarts_search_courseId").val());
+	$("#echarts_search_eid")[0].length = 1;
+	//指定课程所有班级信息
+	$.post("../../ExamPaperServlet",{op:"findByCid",cid:cid},function(data){
+		var examPaperInfoObj="";
+		$.each(data,function(index,item){
+			examPaperInfoObj+="<option value='"+item.eid+"'>"+item.ename+"</option>";
+		});
+		$("#echarts_search_eid").append($(examPaperInfoObj));
+
+	},"json");
+}
+//当根据试卷下拉框时，为按钮动态绑定函数
+ function gradeEcharts(){
+ 	//为 “柱状” 按钮绑定生成柱状图形函数
+ 	$("#barBtn").attr('href','javascript:gradeBar()');
+ 	//为 “折线” 按钮绑定生成折线图形函数
+ 	$("#lineBtn").attr('href','javascript:gradeLine()');
+ }
+ //当选择班级下拉框时，为按钮动态绑定函数
+ function classEcharts(){
+ 	//为 “柱状” 按钮绑定生成柱状图形函数
+ 	$("#barBtn").attr('href','javascript:classBar()');
+ 	//为 “折线” 按钮绑定生成折线图形函数
+ 	$("#lineBtn").attr('href','javascript:classLine()');
+ }
+ //根据试卷生成柱状成绩图
+function gradeBar(){
+	
+    var eid = $.trim($("#echarts_search_eid").val());
+    var ename =$.trim($("#echarts_search_eid").find("option:selected").text()); 
+    //异步加载数据
+    $.post('../../AnsPaperServlet',{op:"findByEid",eid:eid},function (data) {
+    	var myChart=echarts.init(document.getElementById("chartmain"));
+    	myChart.showLoading();  //数据加载完之前先显示一段简单的loading动画
+    	var xData = [];//x轴报表数据
+    	var yData = [];//y轴报表数据
+    	if(data){
+    		for(var i =0;i<data.length;i++){
+    			xData.push(data[i].sname);
+    		}
+    		for(var i =0;i<data.length;i++){
+    			yData.push(data[i].score);
+    		}
+    	}
+    	myChart.hideLoading(); //隐藏加载动画
+    	myChart.setOption({  //加载数据图表
+    		title:{
+    	        text:ename+"成绩统计"
+    	    },
+    	    //提示框组件
+    	    tooltip:{
+    	        //坐标轴触发，主要用于柱状图，折线图等
+    	        trigger:'axis'
+    	    },
+    		 //图例
+    	    legend:{
+    	        data:['成绩统计']
+    	    },
+			xAxis:{
+				name:'学生姓名',
+				data:xData
+			},
+			yAxis:{
+				name:'考试分数'
+			},
+			series:[{
+				name:'考试分数',
+				type:'bar',
+				data:yData
+			}]
+		});
+	
+    },"json");
+}
+//根据试卷生成折线成绩图
+function gradeLine(){
+	
+    var eid = $.trim($("#echarts_search_eid").val());
+    var ename =$.trim($("#echarts_search_eid").find("option:selected").text()); 
+    //异步加载数据
+    $.post('../../AnsPaperServlet',{op:"findByEid",eid:eid},function (data) {
+    	var myChart=echarts.init(document.getElementById("chartmain"));
+    	myChart.showLoading();  //数据加载完之前先显示一段简单的loading动画
+    	var xData = [];//x轴报表数据
+    	var yData = [];//y轴报表数据
+    	if(data){
+    		for(var i =0;i<data.length;i++){
+    			xData.push(data[i].sname);
+    		}
+    		for(var i =0;i<data.length;i++){
+    			yData.push(data[i].score);
+    		}
+    	}
+    	myChart.hideLoading(); //隐藏加载动画
+    	myChart.setOption({  //加载数据图表
+    		title:{
+    	        text:ename+"成绩统计"
+    	    },
+    	    //提示框组件
+    	    tooltip:{
+    	        //坐标轴触发，主要用于柱状图，折线图等
+    	        trigger:'axis'
+    	    },
+    		 //图例
+    	    legend:{
+    	        data:['成绩统计']
+    	    },
+			xAxis:{
+				name:'学生姓名',
+				data:xData
+			},
+			yAxis:{
+				name:'考试分数'
+			},
+			series:[{
+				name:'考试分数',
+				type:'line',
+				data:yData
+			}]
+		});
+	
+    },"json");
+}
+//生成柱状班级成绩图
+function classBar(){
+	
+
+    var cid = $.trim($("#echarts_search_cid").val());
+    var eid = $.trim($("#echarts_search_eid").val());
+    var cname =$.trim($("#echarts_search_cid").find("option:selected").text()); 
+    //异步加载数据
+     $.post('../../AnsPaperServlet',{op:"findByCidAndEid",cid:cid,eid:eid},function (data) {
+    	var myChart=echarts.init(document.getElementById("chartmain"));
+    	myChart.showLoading();  //数据加载完之前先显示一段简单的loading动画
+    	var xData = [];//x轴报表数据
+    	var yData = [];//y轴报表数据
+    	
+    	if(data){
+    		for(var i =0;i<data.length;i++){
+    			xData.push(data[i].sname);
+    		}
+    		for(var i =0;i<data.length;i++){
+    			yData.push(data[i].score);
+    		}
+    	}
+    	myChart.hideLoading(); //隐藏加载动画
+    	myChart.setOption({  //加载数据图表
+    		title:{
+    	        text:cname +"考试成绩统计"
+    	    },
+    	    //提示框组件
+    	    tooltip:{
+    	        //坐标轴触发，主要用于柱状图，折线图等
+    	        trigger:'axis'
+    	    },
+    		 //图例
+    	    legend:{
+    	        data:['成绩统计']
+    	    },
+			xAxis:{
+				name:'学生姓名',
+				data:xData
+			},
+			yAxis:{
+				name:'考试分数'
+			},
+			series:[{
+				name:'考试分数',
+				type:'bar',
+				data:yData
+			}]
+		});
+	
+    },"json");
+}
+//生成折线班级成绩图
+function classLine(){
+	
+    var cid = $.trim($("#echarts_search_cid").val());
+    var eid = $.trim($("#echarts_search_eid").val());
+    var cname =$.trim($("#echarts_search_cid").find("option:selected").text()); 
+    //异步加载数据
+    $.post('../../AnsPaperServlet',{op:"findByCidAndEid",cid:cid,eid:eid},function (data) {
+    	var myChart=echarts.init(document.getElementById("chartmain"));
+    	myChart.showLoading();  //数据加载完之前先显示一段简单的loading动画
+    	var xData = [];//x轴报表数据
+    	var yData = [];//y轴报表数据
+    	if(data){
+    		for(var i =0;i<data.length;i++){
+    			xData.push(data[i].sname);
+    		}
+    		for(var i =0;i<data.length;i++){
+    			yData.push(data[i].score);
+    		}
+    	}
+    	myChart.hideLoading(); //隐藏加载动画
+    	myChart.setOption({  //加载数据图表
+    		title:{
+    	        text:cname +"考试成绩统计"
+    	    },
+    	    //提示框组件
+    	    tooltip:{
+    	        //坐标轴触发，主要用于柱状图，折线图等
+    	        trigger:'axis'
+    	    },
+    		 //图例
+    	    legend:{
+    	        data:['成绩统计']
+    	    },
+			xAxis:{
+				name:'学生姓名',
+				data:xData
+			},
+			yAxis:{
+				name:'考试分数'
+			},
+			series:[{
+				name:'考试分数',
+				type:'line',
+				data:yData
+			}]
+		});
+	
+    },"json");
+}
+
+</script>

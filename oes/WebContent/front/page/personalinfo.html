@@ -1,0 +1,63 @@
+<style>
+	#stuInf{
+		width:90%;
+		margin:0 auto;
+	}
+	.stu_div{
+		margin-left:200px;
+		margin-top:14px;
+		font-size:16px;
+		
+	}
+	.stu_span{
+		color:red;
+		margin-left: 12px;
+	}
+	
+
+</style>
+<div id="stuInfo" class="stuInfo">
+	<div class="stu_div">
+		<label class="my_label">学号:</label> <span  class="stu_span" id="sid"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">姓名:</label> <span class="stu_span" id="sname"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">密码:</label> <span  class="stu_span" id="pwd"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">所属班级：</label> <span class="stu_span" id="cid"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">性别:</label> <span class="stu_span" id="sex"></span>
+	</div>
+	<div class="stu_div">
+		<label class="my_label">身份证号:</label> <span class="stu_span" id="cardID"></span>
+	</div>
+
+	<div class="stu_div">
+		<label class="my_label">头像:</label> <div id ="photo"></div>
+	</div>
+</div>
+<script>
+	$(function() {
+		//获取指定学生信息
+		$.post("../StuInfoServlet",{op:"findByFrontSid"},function(data) {
+			var cid = data.cid;
+			$.post("../ClassInfoServlet", {
+				op : "findByCid",
+				cid : cid
+			}, function(data) {
+				$("#cid").text(data.cname);
+			}, "json")
+			$("#sid").text(data.sid);
+			$("#sname").text(data.sname);
+			$("#pwd").text(data.pwd);
+			$("#cardID").text(data.cardID);
+			$("#tel").text(data.tel);
+			$("#sex").text(data.sex);
+			$("#photo").html("<img src='../../stuPhotos/"+data.photo+"' width=100px height=100px;>");},
+			"json");
+	})
+</script>

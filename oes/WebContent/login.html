@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> 
+<meta http-equiv="Pragma" content="no-cache"> 
+<meta http-equiv="Cache-Control" content="no-cache"> 
+<meta http-equiv="Expires" content="0"> 
+<title>源辰信息科技有限公司-在线考试系统登录界面</title>
+<link rel="shortcut icon" type="image/x-icon" href="easyui/images/yc.png"/>
+<link href="css/login.css" type="text/css" rel="stylesheet"> 
+<script type="text/javascript" src="easyui/js/jquery-1.11.3.js"></script>
+<script type="text/javascript">
+$(function(){
+	$.post("RoleInfoServlet",{op:"findAll"},function(data) {
+		var str = "";
+		$.each(data, function(index, item) {
+			str += "<option value='" + item.rid + "'>"+item.rname+"</option>";
+		});
+		$("#role").append($(str));
+	},"json");
+	
+	$("#myform input").focus(function(){
+		$(this).removeClass("navy_error");
+		$("#waring-info").text("");
+	})
+});
+
+function userLogin(){
+	var account = $.trim($("#username").val());
+	if (account == ""){
+		$("#username").addClass("navy_error");
+		return;
+	}
+	
+	var pwd = $.trim($("#pwd").val());
+	if (pwd == ""){
+		$("#pwd").addClass("navy_error");
+		return;
+	}
+	
+	var role = $("#role").val();
+	
+	$.post("LoginServlet",{role:role, account:account, pwd:pwd},function(data){
+		data = parseInt($.trim(data));
+		if (data ==1) {
+			$("#myform")[0].reset();
+			if (role == 1021){
+				location.href="front/index.jsp";
+			} else if(role == "1023"){
+				location.href="back/manager/index.jsp";
+			}
+		} else {
+			$("#waring-info").text("账号或密码错误，请确认后重新登录...");
+		}
+	},"text");
+}
+</script>
+</head> 
+<body> 
+
+<div class="login">
+    <div class="message">在线考试系统登录</div>
+    <div id="darkbannerwrap"></div>
+    <form id="myform">
+    	<select name="role" id="role">
+    		
+    	</select>
+		<hr class="hr15">
+		<input name="username" id="username" placeholder="账号" required type="text">
+		<hr class="hr15">
+		<input name="password" id="pwd" placeholder="密码" required type="password">
+		<hr class="hr15">
+		<span id="waring-info" style="color:red"></span>
+		<hr class="hr15">
+		<input value="登录" style="width:100%;" type="button" onclick="userLogin()">
+		<hr class="hr20">
+		<a href="">忘记密码</a>
+	</form>
+</div>
+
+<div class="copyright">衡阳市源辰信息科技有限公司 &copy; <a href="http://www.hyycinfo.com" target="_blank">在线考试系统</a></div>
+</body>
+</html>

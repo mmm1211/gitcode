@@ -1,0 +1,169 @@
+<table id="major_info" data-options="fit:true"></table>
+<script>
+var majorEditRow = undefined; //当前正在编辑行
+var majorOp="";//当前正在进行的操作
+var majorFlag="";//当前正在进行操作的名称
+var majorDataGridObject = $('#major_info').datagrid({   
+    url:'../../MajorInfoServlet', 
+    queryParams:{op:"findByPage"},
+    striped:true,	//交替显示行背景
+    nowrap:true,	//当数据长度超出列宽时将会自动截取。
+    loadMsg:"数据加载中...",		//当从远程站点载入数据时，显示的一条快捷信息。
+    sortName:"mid",	//当数据表格初始化时以哪一列来排序。
+    remoteSort:false,   //是否通过远程服务器对数据排序。
+    fitColumns:true, //自动使列适应表格宽度以防止出现水平滚动。
+    pagination:true, //在数据表格底部显示分页工具栏。
+    rownumbers:true, //是否显示列数
+    //singleSelect:true, //是否允许多选
+    pageSize:15,
+    pageList:[10,15,20,25,30,35,40],
+    columns:[[  
+        {checkbox:true},
+        {field:'mid',title:'专业编号',width:100,align:'center',sortable:true},   
+        {field:'mname',title:'专业名称',width:100,align:'center',editor:{type:"text",options:{required:true}}},   
+        {field:'status',title:'专业状态',width:100,align:'center',formatter:function(val,row,index){ //标记专业状态的函数
+        	if(val == "0"){
+        		return "<font color='red'>停开</front>";
+        	}else{
+            	return "<font color='green'>启开</front>";
+        	}
+        }}
+        ]],
+        toolbar:[{
+        	text:"添加",
+        	iconCls:'icon-book-addresses-add',
+        	handler:function(){
+        		if(majorEditRow == undefined){ //说明没有行正在编辑
+        			//添加一行
+        			majorDataGridObject.datagrid('insertRow',{index:0,row:{}});
+        			//开启编辑这一行
+        			majorDataGridObject.datagrid('beginEdit',0);
+        			majorEditRow =0;
+        			majorOp="addMajorInfo";
+        			majorFlag="添加";
+        		}
+        	}
+        },'-',{
+            text:"修改",
+            iconCls:'icon-book-addresses-edit',
+            handler:function(){
+            	if(majorEditRow == undefined){ //说明没有正在编辑的行
+            		//获取要修改的行
+            		var row= majorDataGridObject.datagrid("getChecked")[0];
+            		if(row == undefined){
+            			$.messager.show({title:'温馨提示',msg:'请选择您要修改的数据...',timeout:2000,showType:'slide'});
+            			return;
+            		}
+            		//获取选中行索引
+            		majorEditRow = majorDataGridObject.datagrid("getRowIndex",row);
+            		//开启编辑这一行
+            		majorDataGridObject.datagrid('beginEdit',majorEditRow);
+            		majorOp="updateMajorInfo";
+            		majorFlag="修改";
+            	}
+            }
+        },'-',{
+            text:"停开",
+            iconCls:'icon-book-addresses-delete',
+            handler:function(){
+            	var status =0;
+            	var rows= majorDataGridObject.datagrid("getChecked");
+            	if(rows.length <= 0){
+            		$.messager.show({title:'温馨提示',msg:'请选择您停开的专业...',timeout:2000,showType:'slide'});
+            		return;
+            	}else{
+            		$.messager.confirm('确认操作','您确定要停开这些专业吗?',function(r){
+            			if(r){
+            				var mids ="";
+            				for(var i=0,len = rows.length;i<len-1;i++){
+            					mids+=rows[i].mid+",";
+            				}
+            				mids+=rows[i].mid;
+            				$.post("../../MajorInfoServlet",{op:"updateMajor",mids:mids,status:status},function(data){
+            					if(data >0){
+            						$.messager.show({title:'成功提示',msg:'专业停开设置成功...',timeout:2000,showType:'slide'});
+            						majorDataGridObject.datagrid("reload");
+            					}else{
+            						majorDataGridObject.datagrid("rejectChanges");
+            						$.messager.alert('失败提示','专业停开设置失败...','error');
+            					}
+            					row =null;
+            					majorEditRow = undefined;
+            				},"text");
+            			}
+            		});	
+           		 }
+            }
+        },'-',{
+            text:"开设",
+            iconCls:'icon-book-go',
+            handler:function(){
+            	var status =1;
+            	var rows= majorDataGridObject.datagrid("getChecked");
+            	if(rows.length <= 0){
+            		$.messager.show({title:'温馨提示',msg:'请选择您开设的专业...',timeout:2000,showType:'slide'});
+            		return;
+            	}else{
+            		$.messager.confirm('确认操作','您确定要开设这些专业吗?',function(r){
+            			if(r){
+            				var mids ="";
+            				for(var i=0,len = rows.length;i<len-1;i++){
+            					mids+=rows[i].mid+",";
+            				}
+            				mids+=rows[i].mid;
+            				$.post("../../MajorInfoServlet",{op:"updateMajor",mids:mids,status:status},function(data){
+            					if(data >0){
+            						$.messager.show({title:'成功提示',msg:'专业开设设置成功...',timeout:2000,showType:'slide'});
+            						majorDataGridObject.datagrid("reload");
+            					}else{
+            						majorDataGridObject.datagrid("rejectChanges");
+            						$.messager.alert('失败提示','专业开设设置失败...','error');
+            					}
+            					row =null;
+            					majorEditRow = undefined;
+            				},"text");
+            			}
+            		});	
+           		 }
+            }
+        },'-',{
+            text:"保存",
+            iconCls:'icon-save',
+            handler:function(){
+            	if(majorEditRow != undefined){
+            		//结束编辑
+            		majorDataGridObject.datagrid('endEdit',majorEditRow);
+            		//获取用户编辑的数据
+            		var row = majorDataGridObject.datagrid('getChanges')[0];
+            		if(row != undefined){
+            			row["op"]=majorOp;
+            			$.post("../../MajorInfoServlet",row,function(data){
+            				data = parseInt($.trim(data));
+            				if(data >0){
+            					$.messager.show({title:'成功提示',msg:majorFlag+'专业成功...',timeout:2000,showType:'slide'});
+            					row =null;
+            	            	majorEditRow = undefined;
+            					majorDataGridObject.datagrid("reload");
+            				}else{
+            					majorDataGridObject.datagrid("rejectChanges");
+            					$.messager.alert('失败提示','课程信息'+majorFlag+'失败...','error');
+            					row =null;
+            					majorEditRow = undefined;
+            				}
+            				
+            			},"text");
+            		}
+            	}
+            }
+        },'-',{
+            text:"撤销",
+            iconCls:'icon-undo',
+            handler:function(){
+            	row =null;
+            	majorEditRow = undefined;
+            	majorDataGridObject.datagrid("rejectChanges");
+            }
+        }
+        ]
+});
+</script>

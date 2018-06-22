@@ -1,0 +1,133 @@
+<style type="text/css">
+	#stu{
+		
+		margin-top:100px;
+		margin-left:100px;
+	}
+	.stu_div{
+		margin-left:200px;
+		margin-top:14px;
+		font-size:16px;
+	}
+	.my_label{
+		font-size:16px;
+		margin-right:14px;
+	}
+	.stu_span{
+		margin-left: 12px;
+	}
+	.pwd,.newpwd,.renewpwd{
+		margin:10px,10px;
+	}
+	#hide_div{
+		display:none;
+	}
+</style>
+
+<div id="stu">
+	<div class="stu_div">
+		<label class="my_label">请输入原始密码:</label>
+		<input type="password" id="pwd"  value="" placeholder="请输入原始密码" onfocus="checkPwd()" onblur="checkPwd()"/>  <span class="stu_span" id="stu_span1" ></span>
+	</div>
+	<br />
+	<br />
+	<div class="stu_div" id="hide_div">
+		<label class="my_label">请输入新的密码:</label>
+		<input type="password" id="newpwd" value="" placeholder="请输入新的密码" onfocus="checkPassword()" onblur="checkPassword()"/>  <span class="stu_span"  id="stu_span2"></span>
+		<br />
+		<br />
+		<label class="my_label">请再次输入密码:</label>
+		<input type="password" id="renewpwd" value="" placeholder="请再次输入密码"  onfocus="checkRepPassword()" onblur="checkRepPassword()"/>  <span  class="stu_span" id="stu_span3" ></span>
+		<br />
+		<br />
+		<input type="button" id="btn" value="确认修改" onclick="updatePwd()"/><span  class="stu_span" id="stu_span4"></span>
+		
+	</div>
+</div>
+<script>
+	//验证原始密码
+function checkPwd(){
+	//获取指定学生信息
+	document.getElementById("stu_span4").innerText = "";
+	var pwd =$.trim( $("#pwd").val());
+	$.post("../StuInfoServlet",{op:"checkPwd",pwd:pwd},function(data) {
+			data =parseInt($.trim(data));
+			var stu_span1_msg = document.getElementById("stu_span1");
+			if(data ==1){
+				stu_span1_msg.innerText = "密码验证成功！";
+				stu_span1_msg.style.color="green";
+				var hide_div = document.getElementById("hide_div");
+				hide_div.style.display="block";
+			}else{
+				stu_span1_msg.innerText = "密码验证错误！";
+				stu_span1_msg.style.color="red";
+			}
+	},"json");
+}
+
+//验证新的密码是否为空
+function checkPassword() {
+	document.getElementById("stu_span4").innerText = "";
+	var newpwd = document.getElementById("newpwd");
+	var stu_span2_msg = document.getElementById("stu_span2");
+	
+	if (newpwd == "") {
+		stu_span2_msg.innerText = "密码不能为空！";
+		stu_span2_msg.style.color="red";
+	} else {
+		stu_span2_msg.innerText="密码符合规范...";
+		stu_span2_msg.style.color="green";
+	}
+}
+// 验证密码是否匹配
+function checkRepPassword() {
+	document.getElementById("stu_span4").innerText = "";
+	var newpwd = document.getElementById("newpwd");
+	var renewpwd = document.getElementById("renewpwd");
+	var stu_span3_msg = document.getElementById("stu_span3");
+	
+	if(renewpwd == ""){
+		stu_span3_msg.innerText = "密码不能为空！";
+		stu_span3_msg.style.color="red";
+	}else if(newpwd.value == renewpwd.value) {
+		stu_span3_msg.innerText = "密码一致...";
+		stu_span3_msg.style.color="green";
+	} else {
+		stu_span3_msg.innerText = "两次密码输入不一致，请重新输入！";
+		stu_span3_msg.style.color="red";
+	}
+}
+function updatePwd(){
+	
+	var newpwd =$.trim( $("#newpwd").val());
+	$.post("../StuInfoServlet",{op:"updatePwd",pwd:newpwd},function(data){
+		data =parseInt($.trim(data));
+		var stu_span4_msg = document.getElementById("stu_span4");
+		if(data ==1){
+			stu_span4_msg.innerText = "密码修改成功...";
+			stu_span4_msg.style.color="green";
+			$("#pwd").val("");
+			$("#newpwd").val("");
+			$("#renewpwd").val("");
+			var stu_span1_msg = document.getElementById("stu_span1");
+			var stu_span2_msg = document.getElementById("stu_span2");
+			var stu_span3_msg = document.getElementById("stu_span3");
+			stu_span1_msg.innerText = "";
+			stu_span2_msg.innerText = "";
+			stu_span3_msg.innerText = "";
+		}else{
+			stu_span4_msg.innerText = "密码修改失败...";
+			stu_span4_msg.style.color="red";
+			$("#newpwd").val("");
+			$("#renewpwd").val("");
+			var stu_span1_msg = document.getElementById("stu_span1");
+			var stu_span2_msg = document.getElementById("stu_span2");
+			var stu_span3_msg = document.getElementById("stu_span3");
+			stu_span1_msg.innerText = "";
+			stu_span2_msg.innerText = "";
+			stu_span3_msg.innerText = "";
+		}
+	},"json");
+}
+
+</script>
